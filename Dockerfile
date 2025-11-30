@@ -1,4 +1,4 @@
-FROM python:3.7-slim-stretch
+FROM python:3.7-slim-buster
 
 RUN apt-get update && apt-get install -y git python3-dev gcc \
     libglib2.0-0 libsm6 libxext6 libxrender-dev \
