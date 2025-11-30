@@ -30,12 +30,14 @@ Run the container with GPU support enabled:
 docker run -d \
   --name dermatitis-app \
   --gpus all \
+  --security-opt seccomp=unconfined \
   -p 5000:5000 \
   --restart unless-stopped \
   dermatitis-detector
 ```
 
 - `--gpus all`: Passes all available GPUs to the container.
+- `--security-opt seccomp=unconfined`: Required on some Proxmox/LXC setups to allow socket creation.
 - `-p 5000:5000`: Maps port 5000 on the host to port 5000 in the container.
 - `--restart unless-stopped`: Automatically restarts the container if it crashes or the server reboots.
 
