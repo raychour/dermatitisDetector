@@ -9,6 +9,12 @@ from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import HTMLResponse, JSONResponse
 from starlette.staticfiles import StaticFiles
 
+# Compatibility shim for FastAI v1 models
+import fastai.layers
+if not hasattr(fastai.layers, 'FlattenedLoss'):
+    class FlattenedLoss(CrossEntropyLossFlat): pass
+    fastai.layers.FlattenedLoss = FlattenedLoss
+
 export_file_url = 'https://www.dropbox.com/s/j8bvf35768lhpfk/export.pkl?dl=1'
 export_file_name = 'export.pkl'
 
