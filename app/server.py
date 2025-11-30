@@ -1,30 +1,17 @@
-# All code below sourced from fastai course 2019
-
-import uvicorn
-import requests
-from fastai.vision.all import *
-from io import BytesIO
 from starlette.applications import Starlette
+from starlette.responses import JSONResponse, HTMLResponse
 from starlette.middleware.cors import CORSMiddleware
-from starlette.responses import HTMLResponse, JSONResponse
 from starlette.staticfiles import StaticFiles
-
-# Compatibility shim for FastAI v1 models
-import fastai.layers
-import fastai.learner
-import sys
-
-if not hasattr(fastai.layers, 'FlattenedLoss'):
-    class FlattenedLoss(CrossEntropyLossFlat): pass
-    fastai.layers.FlattenedLoss = FlattenedLoss
-
-if 'fastai.basic_train' not in sys.modules:
-    sys.modules['fastai.basic_train'] = fastai.learner
+from fastai.vision import *
+import uvicorn
+import aiohttp
+import asyncio
+from io import BytesIO
 
 export_file_url = 'https://www.dropbox.com/s/j8bvf35768lhpfk/export.pkl?dl=1'
 export_file_name = 'export.pkl'
 
-classes = ['eczema', 'measles', 'melanoma']
+classes = ['Actinic Keratoses', 'Basal Cell Carcinoma', 'Benign Keratosis', 'Dermatofibroma', 'Melanocytic Nevi', 'Melanoma', 'Vascular skin lesion']
 path = Path(__file__).parent
 
 app = Starlette()
@@ -32,20 +19,19 @@ app.add_middleware(CORSMiddleware, allow_origins=['*'], allow_headers=['X-Reques
 app.mount('/static', StaticFiles(directory='app/static'))
 
 
-import requests
-
-def download_file(url, dest):
+async def download_file(url, dest):
     if dest.exists(): return
-    response = requests.get(url)
-    response.raise_for_status()
-    with open(dest, 'wb') as f:
-        f.write(response.content)
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as response:
+            data = await response.read()
+            with open(dest, 'wb') as f:
+                f.write(data)
 
 
-def setup_learner():
-    download_file(export_file_url, path / export_file_name)
+async def setup_learner():
+    await download_file(export_file_url, path / export_file_name)
     try:
-        learn = load_learner(path / export_file_name)
+        learn = load_learner(path, export_file_name)
         return learn
     except RuntimeError as e:
         if len(e.args) > 0 and 'CPU-only machine' in e.args[0]:
@@ -55,7 +41,11 @@ def setup_learner():
         else:
             raise
 
-learn = setup_learner()
+
+loop = asyncio.get_event_loop()
+tasks = [asyncio.ensure_future(setup_learner())]
+learn = loop.run_until_complete(asyncio.gather(*tasks))[0]
+loop.close()
 
 
 @app.route('/')
@@ -68,7 +58,7 @@ async def homepage(request):
 async def analyze(request):
     img_data = await request.form()
     img_bytes = await (img_data['file'].read())
-    img = PILImage.create(BytesIO(img_bytes))
+    img = open_image(BytesIO(img_bytes))
     prediction = learn.predict(img)[0]
     return JSONResponse({'result': str(prediction)})
 
