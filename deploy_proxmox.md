@@ -62,6 +62,22 @@ Open your browser and navigate to:
 
 ## Troubleshooting
 
+### "Permission denied" or "socketpair" Error
+If you see `PermissionError: [Errno 13] Permission denied` related to `socketpair`, it means your Docker container is being restricted by the Proxmox/LXC host.
+Try running with `--privileged`:
+
+```bash
+docker run -d \
+  --name dermatitis-app \
+  --gpus all \
+  --privileged \
+  -p 5000:5000 \
+  --restart unless-stopped \
+  dermatitis-detector
+```
+
+Alternatively, ensure "Nesting" and "Keyctl" are enabled in your LXC container options in Proxmox.
+
 ### "could not select device driver" Error
 If you see an error like `docker: Error response from daemon: could not select device driver "" with capabilities: [[gpu]].`, it means the NVIDIA Container Toolkit is not configured correctly.
 Run `sudo nvidia-ctk runtime configure --runtime=docker` and restart Docker.
