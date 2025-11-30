@@ -1,16 +1,29 @@
-FROM python:3.7-slim-stretch
+FROM python:3.9-slim
 
-RUN apt-get update && apt-get install -y git python3-dev gcc \
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    git \
+    python3-dev \
+    gcc \
+    libgl1-mesa-glx \
+    libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
 
 COPY requirements.txt .
 
-RUN pip install --upgrade -r requirements.txt
+# Install dependencies
+# Note: For GPU support, PyTorch will be installed by fastai/requirements.txt.
+# If specific CUDA version is needed, it might need a separate command, 
+# but usually pip handles it for standard setups.
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
 COPY app app/
 
-RUN python app/server.py
-
+# Expose port
 EXPOSE 5000
 
+# Run the server
 CMD ["python", "app/server.py", "serve"]
