@@ -11,9 +11,15 @@ from starlette.staticfiles import StaticFiles
 
 # Compatibility shim for FastAI v1 models
 import fastai.layers
+import fastai.learner
+import sys
+
 if not hasattr(fastai.layers, 'FlattenedLoss'):
     class FlattenedLoss(CrossEntropyLossFlat): pass
     fastai.layers.FlattenedLoss = FlattenedLoss
+
+if 'fastai.basic_train' not in sys.modules:
+    sys.modules['fastai.basic_train'] = fastai.learner
 
 export_file_url = 'https://www.dropbox.com/s/j8bvf35768lhpfk/export.pkl?dl=1'
 export_file_name = 'export.pkl'
