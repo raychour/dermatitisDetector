@@ -41,6 +41,16 @@ docker run -d \
 - `-p 5000:5000`: Maps port 5000 on the host to port 5000 in the container.
 - `--restart unless-stopped`: Automatically restarts the container if it crashes or the server reboots.
 
+### Redeploying / Updating
+If you need to update the app or change flags, you must first remove the old container:
+
+```bash
+docker stop dermatitis-app
+docker rm dermatitis-app
+```
+
+Then run the `docker run` command again.
+
 ### 4. Verify Deployment
 Check if the container is running:
 
