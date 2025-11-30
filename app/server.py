@@ -1,8 +1,7 @@
 # All code below sourced from fastai course 2019
 
-import aiohttp
-import asyncio
 import uvicorn
+import requests
 from fastai.vision.all import *
 from io import BytesIO
 from starlette.applications import Starlette
@@ -21,17 +20,18 @@ app.add_middleware(CORSMiddleware, allow_origins=['*'], allow_headers=['X-Reques
 app.mount('/static', StaticFiles(directory='app/static'))
 
 
-async def download_file(url, dest):
+import requests
+
+def download_file(url, dest):
     if dest.exists(): return
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url) as response:
-            data = await response.read()
-            with open(dest, 'wb') as f:
-                f.write(data)
+    response = requests.get(url)
+    response.raise_for_status()
+    with open(dest, 'wb') as f:
+        f.write(response.content)
 
 
-async def setup_learner():
-    await download_file(export_file_url, path / export_file_name)
+def setup_learner():
+    download_file(export_file_url, path / export_file_name)
     try:
         learn = load_learner(path / export_file_name)
         return learn
@@ -43,11 +43,7 @@ async def setup_learner():
         else:
             raise
 
-
-loop = asyncio.get_event_loop()
-tasks = [asyncio.ensure_future(setup_learner())]
-learn = loop.run_until_complete(asyncio.gather(*tasks))[0]
-loop.close()
+learn = setup_learner()
 
 
 @app.route('/')
